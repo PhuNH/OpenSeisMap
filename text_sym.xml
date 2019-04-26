@@ -1,0 +1,9 @@
+<Map background-color="white">
+    <Style name="style1">
+        <Rule>
+            <TextSymbolizer face-name="DejaVu Sans Book" size="10" fill="black" halo-fill="white" halo-radius="1"
+                            placement="interior" allow-overlap="false">[Data]
+            </TextSymbolizer>
+        </Rule>
+    </Style>
+</Map>

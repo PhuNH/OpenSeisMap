@@ -7,6 +7,7 @@ Created on Thu Apr 25 21:33:58 2019
 """
 from __future__ import division
 import os
+from math import ceil
 import mapnik
 from colour import Color
 from geo_functions import open_shapefile, show_field_names
@@ -35,6 +36,7 @@ m = mapnik.Map(1300, 900) # Create a map with a given width and height in pixels
 # or shorter
 m.srs = '+init=epsg:3857'
 m.background = mapnik.Color('white') # Set background colour
+# mapnik.load_map(m, 'text_sym.xml')
 
 world_style = mapnik.Style()
 world_rule = mapnik.Rule()
@@ -64,21 +66,26 @@ for i in range(0, colorCount-1):
     r = mapnik.Rule() # Rule object to hold symbolizers
     # To fill a polygon we create a PolygonSymbolizer
     psym = mapnik.PolygonSymbolizer()
-    psym.fill_opacity = i / colorCount
+    psym.fill_opacity = (i+1) / colorCount
     psym.fill = mapnik.Color(colors[i].web)
     r.symbols.append(psym) # Add the symbolizer to the rule object
     r.filter = mapnik.Expression("[Data] >= {} and [Data] < {}".format(stops[i], stops[i+1]))
     s.rules.append(r) # Add the rule to the style
     
 i += 1
-print i
 r = mapnik.Rule()
 psym = mapnik.PolygonSymbolizer()
 psym.fill_opacity = 1
 psym.fill = mapnik.Color(colors[i].web)
 r.symbols.append(psym)
-r.filter = mapnik.Expression("[Data] >= {} and [Data] < {}".format(stops[i], maxData))
+r.filter = mapnik.Expression("[Data] >= {} and [Data] <= {}".format(stops[i], ceil(maxData)))
 s.rules.append(r)
+
+# It is possible to define styles in an xml file then get those styles in python
+# text_s = m.find_style('style1')
+# for ru in text_s.rules:
+#     s.rules.append(ru)
+
 m.append_style('data_style', s) # Styles are given names only as they are applied to the map
 
 ds = mapnik.Shapefile(file='data/seis_cells.shp')
