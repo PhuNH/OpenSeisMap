@@ -18,7 +18,7 @@ cells_layer = cells_ds.GetLayerByIndex(0)
 myData = []
 cells_layer.ResetReading()
 for cell_feature in cells_layer:
-   myData.append(cell_feature.GetFieldAsDouble(0))
+    myData.append(cell_feature.GetFieldAsDouble(0))
 
 colorCount = 256
 maxData = max(myData)
@@ -61,16 +61,15 @@ line_symbolizer.stroke_width = 0.1
 r.symbols.append(line_symbolizer) # Add the symbolizer to the rule object
 '''
 for i in range(0, colorCount-1):
-   r = mapnik.Rule() # Rule object to hold symbolizers
-   # To fill a polygon we create a PolygonSymbolizer
-   psym = mapnik.PolygonSymbolizer()
-   psym.fill_opacity = i / colorCount
-      
-   psym.fill = mapnik.Color(colors[i].web)
-   r.symbols.append(psym) # Add the symbolizer to the rule object
-   r.filter = mapnik.Expression("[Data] >= {} and [Data] < {}".format(stops[i], stops[i+1]))
-   s.rules.append(r) # Add the rule to the style
-   
+    r = mapnik.Rule() # Rule object to hold symbolizers
+    # To fill a polygon we create a PolygonSymbolizer
+    psym = mapnik.PolygonSymbolizer()
+    psym.fill_opacity = i / colorCount
+    psym.fill = mapnik.Color(colors[i].web)
+    r.symbols.append(psym) # Add the symbolizer to the rule object
+    r.filter = mapnik.Expression("[Data] >= {} and [Data] < {}".format(stops[i], stops[i+1]))
+    s.rules.append(r) # Add the rule to the style
+    
 i += 1
 print i
 r = mapnik.Rule()
@@ -93,5 +92,5 @@ l.styles.append('data_style')
 m.layers.append(l)
 
 m.zoom_all()
-mapnik.render_to_file(m, 'output-mapnik/demo.png')
-os.system('xdg-open output-mapnik/demo.png')
+mapnik.render_to_file(m, 'output-mapnik/tile-renderer.png')
+os.system('xdg-open output-mapnik/tile-renderer.png')

@@ -17,7 +17,7 @@ m.append_style('Raster Style',s)
 
 lyr = mapnik.Layer('GDAL Layer')
 #lyr.srs = '+proj=merc +lon_0=0 +k=1 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs'
-lyr.datasource = mapnik.Gdal(file='../data/png-on-xml.png',bbox=(0,0,1000,1000))
+lyr.datasource = mapnik.Gdal(file='../data/png-on-xml-data.png',bbox=(0,0,1000,1000))
 lyr.styles.append('Raster Style')
 m.layers.append(lyr)
 
