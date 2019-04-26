@@ -1,3 +1,8 @@
+/data/
+/output*/
+/TuSeisSolScripts/
+/mightdo/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
