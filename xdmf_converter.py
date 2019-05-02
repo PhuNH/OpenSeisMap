@@ -130,6 +130,6 @@ if __name__ == '__main__':
     #args = parser.parse_args()
     args = Namespace(Data=['v3d'], filename='data/data-surface.xdmf', idt=[160], oneDtMem=False, restart=[0])
     output_files = ["data/seis_cells.shp"]
-    base = (0, 0, 0)
-    scale = 50
+    base = (11.588271 * 100000, 47.751307 * 125000, 0)
+    scale = 10
     xdmf_args_to_shp(args, output_files, 1, base, scale)

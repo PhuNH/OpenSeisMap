@@ -47,7 +47,7 @@ world_style.rules.append(world_rule)
 m.append_style('World Style', world_style)
 
 world_ds = mapnik.Shapefile(file='data/world_merc.shp')
-print world_ds.envelope()
+print(world_ds.envelope())
 world_layer = mapnik.Layer('world_layer')
 world_layer.srs = '+init=epsg:3395'
 world_layer.datasource = world_ds
@@ -89,7 +89,7 @@ s.rules.append(r)
 m.append_style('data_style', s) # Styles are given names only as they are applied to the map
 
 ds = mapnik.Shapefile(file='data/seis_cells.shp')
-print ds.envelope()
+print(ds.envelope())
 l = mapnik.Layer('data_layer')
 # Note: layer.srs will default to '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs'
 # Input projection
