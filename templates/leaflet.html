@@ -28,8 +28,11 @@
             id: 'mapbox.streets',
             accessToken: 'pk.eyJ1IjoicGh1aG5ndXllbiIsImEiOiJjanY1YWk4NXIyejU2NGNqd2x6MnRpYmlpIn0.n3xBZDj-jH1QeCWxq85H8g'
         }).addTo(mymap);*/
-        L.tileLayer('http://{s}.tile.stamen.com/terrain-background/{z}/{x}/{y}.png', {
+        /*L.tileLayer('http://{s}.tile.stamen.com/terrain-background/{z}/{x}/{y}.png', {
             attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'
+        }).addTo(mymap);*/
+        L.tileLayer('http://localhost/hot/{z}/{x}/{y}.png', {
+            maxZoom: 18
         }).addTo(mymap);
 
         var maxData = Number.MIN_VALUE, minData = Number.MAX_VALUE;
