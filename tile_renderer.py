@@ -25,6 +25,7 @@ colorCount = 256
 maxData = max(myData)
 minData = min(myData)
 rangeOneColor = (maxData - minData) / colorCount
+print(maxData, minData, rangeOneColor)
 stops = [minData+i*rangeOneColor for i in range(0, colorCount)]
 colors = list(Color("blue").range_to(Color("red"), colorCount))
 
@@ -49,7 +50,7 @@ m.append_style('World Style', world_style)
 world_ds = mapnik.Shapefile(file='data/world_merc.shp')
 print(world_ds.envelope())
 world_layer = mapnik.Layer('world_layer')
-world_layer.srs = '+init=epsg:3395'
+world_layer.srs = '+init=epsg:3857'
 world_layer.datasource = world_ds
 world_layer.styles.append('World Style')
 m.layers.append(world_layer)
@@ -93,7 +94,7 @@ print(ds.envelope())
 l = mapnik.Layer('data_layer')
 # Note: layer.srs will default to '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs'
 # Input projection
-l.srs = '+init=epsg:3395'
+l.srs = '+init=epsg:3857'
 l.datasource = ds
 l.styles.append('data_style')
 m.layers.append(l)

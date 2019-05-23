@@ -14,10 +14,10 @@ from TuSeisSolScripts.displayh5vtk.DataLoader import ReadHdf5Posix
 def xdmf_args_to_shp(args, output_files, which, base, scale):
     """Uses a argparse.Namespace object
     :param args: the argparse.Namespace object
-    :param output_files: see to_shp
-    :param which: see to_shp
-    :param base: see to_shp
-    :param scale: see to_shp
+    :param output_files: see xdmf_to_shp
+    :param which: see xdmf_to_shp
+    :param base: see xdmf_to_shp
+    :param scale: see xdmf_to_shp
     """
     if ((which < 0 or which > 1) and len(output_files) < 2) or (which >=0 and which <= 1 and len(output_files) < 1):
         raise ValueError("Not enough names for output files")
@@ -30,7 +30,7 @@ def xdmf_args_to_shp(args, output_files, which, base, scale):
     shpDriver = ogr.GetDriverByName("ESRI Shapefile")
     # Create the spatial reference, WGS84
     srs = osr.SpatialReference()
-    srs.ImportFromEPSG(3395) # a PCS, so no lat-lon, only meter
+    srs.ImportFromEPSG(3857) # a PCS, so no lat-lon, only meter
 
     # For points - vertices
     if which != 1:
