@@ -30,7 +30,7 @@ def xdmf_args_to_shp(args, output_files, which, base, scale):
     shp_driver = ogr.GetDriverByName("ESRI Shapefile")
     # Create the spatial reference, WGS84
     srs = osr.SpatialReference()
-    srs.ImportFromEPSG(32646) # a PCS, so no lat-lon, only meter
+    srs.ImportFromEPSG(32646)  # a PCS, so no lat-lon, only meter
 
     # For points - vertices
     if which != 1:
@@ -51,12 +51,12 @@ def xdmf_args_to_shp(args, output_files, which, base, scale):
             v_feature.SetField("X", coord[0])
             v_feature.SetField("Y", coord[1])
 
-            #this
+            # this
 #            # Create the WKT for the feature using Python string formatting
 #            wkt = "POINT(%f %f)" % (coord[0], coord[1])
 #            # Create the point from the Well Known Txt
 #            point = ogr.CreateGeometryFromWkt(wkt)
-            #or this
+            # or this
             point = ogr.Geometry(ogr.wkbPoint)
             point.AddPoint(coord[0], coord[1])
 
@@ -82,10 +82,11 @@ def xdmf_args_to_shp(args, output_files, which, base, scale):
             c_feature = ogr.Feature(triangle_layer.GetLayerDefn())
             c_feature.SetField("Data", my_data[idx])
 
-            #this
-#            wkt = "TRIANGLE((%f %f, %f %f, %f %f, %f %f))" % (coord_a[0], coord_a[1], coord_b[0], coord_b[1], coord_c[0], coord_c[1], coord_a[0], coord_a[1])
+            # this
+#            wkt = "TRIANGLE((%f %f, %f %f, %f %f, %f %f))" % (coord_a[0], coord_a[1], coord_b[0], coord_b[1],
+#                                                              coord_c[0], coord_c[1], coord_a[0], coord_a[1])
 #            triangle = ogr.CreateGeometryFromWkt(wkt)
-            #or this
+            # or this
             # Create ring
             ring = ogr.Geometry(ogr.wkbLinearRing)
             ring.AddPoint(coord_a[0], coord_a[1])
@@ -104,7 +105,8 @@ def xdmf_args_to_shp(args, output_files, which, base, scale):
     point_ds = None
     triangle_ds = None
 
-def xdmf_to_shp(input_file, data, idt, output_files, which = 2, base = (0, 0, 0), scale = 50):
+
+def xdmf_to_shp(input_file, data, idt, output_files, which=2, base=(0, 0, 0), scale=50):
     """Converts xdmf to shapefile
     :param input_file: Fault output file name (xdmf), or TODO, maybe: SeisSol netcdf (nc) or ts (Gocad)
     :param data: Data to visualize (example SRs)
@@ -122,14 +124,15 @@ def xdmf_to_shp(input_file, data, idt, output_files, which = 2, base = (0, 0, 0)
 if __name__ == '__main__':
     parser = ArgumentParser(description='Read hdf5 fault output')
     parser.add_argument('filename', help='fault output filename (xdmf)')
-    parser.add_argument('--Data', nargs=1, metavar='variable', default = '', help='Data to visualize (example SRs)')
+    parser.add_argument('--Data', nargs=1, metavar='variable', default='', help='Data to visualize (example SRs)')
     parser.add_argument('--idt', nargs='+', help='list of time step to visualize (1st = 0); -1 = all', type=int)
-    parser.add_argument('--oneDtMem', dest='oneDtMem', action='store_true', default = False, help='store only the dt to be displayed in RAM')
-    parser.add_argument('--restart', nargs=1, metavar = ('idt'), help='in case of a restart at time frame idt, \
-                        some postprocessing is necessary on Vr: Vr[n+idt] = Vr[n] + Vr[idt]', type=int, default = [0])
-    #args = parser.parse_args()
-    args = Namespace(Data=['v'], filename='../../data/sumatra-surface.xdmf', idt=[50], oneDtMem=False, restart=[0])
-    output_files = ["../../data/sumatra_cells.shp"]
-    base = (0 * 100000, 0 * 125000, 0)
-    scale = 1
-    xdmf_args_to_shp(args, output_files, 1, base, scale)
+    parser.add_argument('--oneDtMem', dest='oneDtMem', action='store_true', default=False,
+                        help='store only the dt to be displayed in RAM')
+    parser.add_argument('--restart', nargs=1, metavar='idt', help='in case of a restart at time frame idt, \
+                        some postprocessing is necessary on Vr: Vr[n+idt] = Vr[n] + Vr[idt]', type=int, default=[0])
+    # args = parser.parse_args()
+    xdmf_args_to_shp(Namespace(Data=['v'], filename='../../data/sumatra-surface.xdmf', idt=[50], oneDtMem=False, restart=[0]),  # args
+                     output_files=["../../data/sumatra_cells.shp"],
+                     which=1,
+                     base=(0 * 100000, 0 * 125000, 0),
+                     scale=1)

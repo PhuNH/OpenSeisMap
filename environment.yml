@@ -1,6 +1,10 @@
 name: oseism
+channels:
+ - conda-forge
+ - cpaulik
 dependencies:
  - python=2.7
+ - python-mapnik
  - numpy
  - vtk
  - gdal
