@@ -1,0 +1,8 @@
+name: oseism
+dependencies:
+ - python=2.7
+ - numpy
+ - vtk
+ - gdal
+ - h5py
+ - lxml

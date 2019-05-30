@@ -1,6 +1,10 @@
 /data/
 /output*/
-/TuSeisSolScripts/
+/TuSeisSolScripts/*
+!/TuSeisSolScripts/displayh5vtk
+/TuSeisSolScripts/displayh5vtk/*
+!/TuSeisSolScripts/displayh5vtk/tile_renderer.py
+!/TuSeisSolScripts/displayh5vtk/xdmf_converter.py
 /mod_tile/
 /mightdo/
 /.idea/

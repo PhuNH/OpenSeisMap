@@ -8,26 +8,42 @@ Created on Thu Apr 25 21:33:58 2019
 from __future__ import division
 import os
 from math import ceil
+from argparse import Namespace, ArgumentParser
 import mapnik
 from colour import Color
 from geo_functions import open_shapefile, show_field_names
 
-cells_ds = open_shapefile("data/seis_cells.shp")
-#show_field_names(cells_ds, 0)
+def make_colors(shapefile):
+    cells_ds = open_shapefile(shapefile)
+    # show_field_names(cells_ds, 0)
 
-cells_layer = cells_ds.GetLayerByIndex(0)
-myData = []
-cells_layer.ResetReading()
-for cell_feature in cells_layer:
-    myData.append(cell_feature.GetFieldAsDouble(0))
+    cells_layer = cells_ds.GetLayerByIndex(0)
+    myData = []
+    cells_layer.ResetReading()
+    for cell_feature in cells_layer:
+        myData.append(cell_feature.GetFieldAsDouble(0))
 
-colorCount = 256
-maxData = max(myData)
-minData = min(myData)
-rangeOneColor = (maxData - minData) / colorCount
-print(maxData, minData, rangeOneColor)
-stops = [minData+i*rangeOneColor for i in range(0, colorCount)]
-colors = list(Color("blue").range_to(Color("red"), colorCount))
+    colorCount = 256
+    maxData = max(myData)
+    minData = min(myData)
+    rangeOneColor = (maxData - minData) / colorCount
+    print(maxData, minData, rangeOneColor)
+    stops = [minData + i * rangeOneColor for i in range(0, colorCount)]
+    colors = list(Color("blue").range_to(Color("red"), colorCount))
+
+    return (stops, colors)
+
+
+def make_picture(stops, colors, epsg, output)
+
+if __name__ == '__main__':
+    parser = ArgumentParser(description='Render a tile')
+    parser.add_argument('shapefile', help='path of the shapefile')
+    parser.add_argument('output', help='path of the output file')
+    parser.add_argument('--epsg', nargs=1, metavar=('variable'), default=('3857'), help='EPSG code of the shapefile')
+    # args = parser.parse_args()
+    args = Namespace(shapefile="data/seis_cells.shp", output='output-mapnik/tile-renderer.png', epsg='32646')
+
 
 m = mapnik.Map(1300, 900) # Create a map with a given width and height in pixels
 # Note: m.srs will default to '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs'
@@ -100,5 +116,5 @@ l.styles.append('data_style')
 m.layers.append(l)
 
 m.zoom_all()
-mapnik.render_to_file(m, 'output-mapnik/tile-renderer.png')
+mapnik.render_to_file(m, )
 os.system('xdg-open output-mapnik/tile-renderer.png')
