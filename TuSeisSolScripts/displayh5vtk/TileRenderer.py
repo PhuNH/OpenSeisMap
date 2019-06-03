@@ -10,7 +10,7 @@ import os
 from argparse import ArgumentParser
 import mapnik
 from colour import Color
-from geo_functions import open_shapefile, show_field_names
+from GeoFunctions import open_shapefile, show_field_names
 
 
 def make_colors(shapefile, color_count=256):
