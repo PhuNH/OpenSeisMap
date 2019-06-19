@@ -23,10 +23,15 @@ Meta tiles:
 - Reasons: rendering efficiency, label placement simplication, and storage and transfer efficiency.
 
 XdmfConverter: Create a shapefile from an Xdmf file
-- Input: Xdmf file path, data name, time step, output file path, epsg code (int)
+- Input: Xdmf file path, data name, time step, output file path, epsg code (int).
 - Can output vertex data and cell data to 2 different files. Default to work on cell data.  
 - For vertex data: Create a 'vertices' layer, each feature in the layer has 2 attributes 'X' and 'Y'.  
-For cell data: Create a 'cells' layer, in which each feature has 1 attribute 'Data'
+For cell data: Create a 'cells' layer, in which each feature has 1 attribute 'Data'.
+
+PyMesh build:
+- Set $CC and $CXX to files in /usr/bin.
+- Change links of libs in env to the local libs: libstdc++, libgomp (still there are warnings about libboost and libgmp).
+- After running cmake in the main project, change in CMakeCache.txt: PYTHON\_EXECUTABLE:FILEPATH, PYTHON\_LIBRARY:FILEPATH; and run cmake again.
 
 TileRenderer: sample Python code to create a tile (image) of the shapefile
 

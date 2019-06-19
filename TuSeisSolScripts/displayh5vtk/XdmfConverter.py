@@ -82,14 +82,14 @@ def xdmf_args_to_shp(args):
 
     # For triangles - cells
     # if args.which != Which.VERTEX:
-    cell_shp, ext = os.path.splitext(args.outputs[0]) # if args.which == 1 else args.outputs[1]
+    cell_shp, ext = os.path.splitext(args.outputs[0])  # if args.which == 1 else args.outputs[1]
 
     xyz_lvl = unstr.xyz
     connect_lvl = unstr.connect
     attr_lvl = my_data
     poly_data_lvl = unstr_to_poly_data(xyz_lvl, connect_lvl, attr_lvl)
 
-    for i in range(args.maxzoom, -1, -1):
+    for i in range(args.maxzoom, args.minzoom-1, -1):
         cell_shp_lvl = cell_shp + '_' + str(i) + ext
         triangle_ds = shp_driver.CreateDataSource(cell_shp_lvl)
         triangle_layer = triangle_ds.CreateLayer("cells", srs, ogr.wkbTriangle)
@@ -128,7 +128,8 @@ def xdmf_args_to_shp(args):
         triangle_ds = None
 
 
-def xdmf_to_shp(input_file, data, idt, output_files=None, epsg=3857, max_zoom=10, reduction=0.5, base=(0, 0, 0), scale=1):
+def xdmf_to_shp(input_file, data, idt, output_files=None, epsg=3857, max_zoom=10, min_zoom=0, reduction=0.5,
+                base=(0, 0, 0), scale=1):
     """Converts xdmf to shapefile
     :param input_file: Fault output file name (xdmf), or TODO, maybe: SeisSol netcdf (nc) or ts (Gocad)
     :param data: Data to visualize (example SRs)
@@ -138,6 +139,7 @@ def xdmf_to_shp(input_file, data, idt, output_files=None, epsg=3857, max_zoom=10
     :param epsg: EPSG code of the layer
     :param which: Extract data of vertices (0), cells (1), or both (2)
     :param max_zoom: Max zoom level for the dataset
+    :param min_zoom: Min zoom level for the dataset
     :param reduction: Target reduction for each zoom level
     :param base: (base_x, base_y, base_z) position of the dataset
     :param scale: Scale of the dataset
@@ -148,7 +150,8 @@ def xdmf_to_shp(input_file, data, idt, output_files=None, epsg=3857, max_zoom=10
         # else:
         output_files = ['output.shp']
     args = Namespace(filename=input_file, Data=data, idt=idt, oneDtMem=False, restart=[0],
-                     outputs=output_files, epsg=epsg, maxzoom=max_zoom, reduction=reduction, base=base, scale=scale)
+                     outputs=output_files, epsg=epsg, maxzoom=max_zoom, minzoom=min_zoom, reduction=reduction,
+                     base=base, scale=scale)
     xdmf_args_to_shp(args)
 
 
@@ -166,6 +169,7 @@ if __name__ == '__main__':
     # parser.add_argument('--which', help='extract vertice data (0) or cell data (1) or both (2)',
     #                     type=int, choices=[0, 1, 2], default=Which.CELL)
     parser.add_argument('--maxzoom', help='max zoom level for this dataset', type=int, default=10)
+    parser.add_argument('--minzoom', help='min zoom level for this dataset', type=int, default=0)
     parser.add_argument('--reduction', help='target reduction for each zoom level', type=float, default=0.5)
     parser.add_argument('--base', help='base_x, base_y, base_z position of the layer', nargs=3,
                         type=float, default=[0, 0, 0])
