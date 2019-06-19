@@ -26,7 +26,7 @@ def make_colors(shapefile, color_count=256):
     max_data = max(my_data)
     min_data = min(my_data)
     range_one_color = (max_data - min_data) / color_count
-    print("color ranges:", min_data, max_data, range_one_color)
+    print("Color ranges:", min_data, max_data, range_one_color)
     stops = [min_data + i * range_one_color for i in range(0, color_count)]
     stops.append(max_data+1)
     colors = list(Color("blue").range_to(Color("red"), color_count))
@@ -55,7 +55,7 @@ def make_image(shapefile, output, color_count=256, threshold=0.6, opening=False,
         m.append_style('World Style', world_style)
 
         world_ds = mapnik.Shapefile(file='../../data/world_merc.shp')
-        print(world_ds.envelope())
+        print("World envelope:", world_ds.envelope())
         world_layer = mapnik.Layer('world_layer')
         world_layer.srs = '+init=epsg:3857'
         world_layer.datasource = world_ds
@@ -89,12 +89,12 @@ def make_image(shapefile, output, color_count=256, threshold=0.6, opening=False,
     m.append_style('data_style', s)  # Styles are given names only as they are applied to the map
 
     ds = mapnik.Shapefile(file=shapefile)
-    print(ds.envelope())
+    print("Datasource envelope:", ds.envelope())
     l_shp = mapnik.Layer('data_layer')
     # Note: layer.srs will default to '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs'
     # Input projection
     l_shp.srs = GeoFunctions.get_shapefile_srs(shapefile).ExportToProj4()
-    print(l_shp.srs)
+    print("Shapefile SRS:", l_shp.srs)
     l_shp.datasource = ds
     l_shp.styles.append('data_style')
     m.layers.append(l_shp)

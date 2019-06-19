@@ -5,29 +5,31 @@ Created on Wed Apr 24 09:38:22 2019
 
 @author: phunh
 """
+import os
 from argparse import Namespace, ArgumentParser
 from osgeo import ogr, osr
 from UnstructuredData import UnstructuredData
 from DataLoader import ReadHdf5Posix
+from UnstructuredDataVtkSupport import unstr_to_poly_data, decimate, map_cell_attribute
 
 
-def enum(*names):
-    enums = dict(zip(names, range(len(names))))
-    return type('Enum', (), enums)
-
-
-Which = enum('VERTEX', 'CELL', 'BOTH')
+# def enum(*names):
+#     enums = dict(zip(names, range(len(names))))
+#     return type('Enum', (), enums)
+#
+#
+# Which = enum('VERTEX', 'CELL', 'BOTH')
 
 
 def xdmf_args_to_shp(args):
     """Uses a argparse.Namespace object
-    :param args: the argparse.Namespace object
+    :param args: a argparse.Namespace object
     """
-    if not (Which.VERTEX <= args.which <= Which.BOTH):
-        raise ValueError("args.which should be 0, 1, or 2")
-    if (args.which == Which.BOTH and len(args.outputs) < 2)\
-            or (Which.VERTEX <= args.which <= Which.CELL and len(args.outputs) < 1):
-        raise ValueError("Not enough names for output files")
+    # if not (Which.VERTEX <= args.which <= Which.BOTH):
+    #     raise ValueError("args.which should be 0, 1, or 2")
+    # if (args.which == Which.BOTH and len(args.outputs) < 2)\
+    #         or (Which.VERTEX <= args.which <= Which.CELL and len(args.outputs) < 1):
+    #     raise ValueError("Not enough names for output files")
 
     base = tuple(args.base)
 
@@ -41,63 +43,70 @@ def xdmf_args_to_shp(args):
     srs = osr.SpatialReference()
     srs.ImportFromEPSG(args.epsg)
 
-    xyz = unstr.xyz  # collapsed_mesh.vertices
-    connect = unstr.connect  # collapsed_mesh.faces
-
     # For points - vertices
-    if args.which != Which.CELL:
-        # Create the data source
-        point_ds = shp_driver.CreateDataSource(args.outputs[0])
-        # Create the layer
-        point_layer = point_ds.CreateLayer("vertices", srs, ogr.wkbPoint)
-        # Add the fields we're interested in
-        point_layer.CreateField(ogr.FieldDefn("X", ogr.OFTReal))
-        point_layer.CreateField(ogr.FieldDefn("Y", ogr.OFTReal))
-
-        # Process the unstructured data and add the attributes and features to the shapefile
-        for vertex in xyz:
-            coord = vertex * args.scale + base
-            # Create the feature
-            v_feature = ogr.Feature(point_layer.GetLayerDefn())
-            # Set the attributes using the values from the unstructured data
-            v_feature.SetField("X", coord[0])
-            v_feature.SetField("Y", coord[1])
-
-            # this
-#            # Create the WKT for the feature using Python string formatting
-#            wkt = "POINT(%f %f)" % (coord[0], coord[1])
-#            # Create the point from the Well Known Txt
-#            point = ogr.CreateGeometryFromWkt(wkt)
-            # or this
-            point = ogr.Geometry(ogr.wkbPoint)
-            point.AddPoint(coord[0], coord[1])
-
-            # Set the feature geometry using the point
-            v_feature.SetGeometry(point)
-            # Create the feature in the layer (shapefile)
-            point_layer.CreateFeature(v_feature)
-            # Dereference the feature
-            v_feature = None
+    # if args.which != Which.CELL:
+    #     # Create the data source
+    #     point_ds = shp_driver.CreateDataSource(args.outputs[0])
+    #     # Create the layer
+    #     point_layer = point_ds.CreateLayer("vertices", srs, ogr.wkbPoint)
+    #     # Add the fields we're interested in
+    #     point_layer.CreateField(ogr.FieldDefn("X", ogr.OFTReal))
+    #     point_layer.CreateField(ogr.FieldDefn("Y", ogr.OFTReal))
+    #
+    #     # Process the unstructured data and add the attributes and features to the shapefile
+    #     for vertex in xyz:
+    #         coord = vertex * args.scale + base
+    #         # Create the feature
+    #         v_feature = ogr.Feature(point_layer.GetLayerDefn())
+    #         # Set the attributes using the values from the unstructured data
+    #         v_feature.SetField("X", coord[0])
+    #         v_feature.SetField("Y", coord[1])
+    #
+    #         # this
+    #         # # Create the WKT for the feature using Python string formatting
+    #         # wkt = "POINT(%f %f)" % (coord[0], coord[1])
+    #         # # Create the point from the Well Known Txt
+    #         # point = ogr.CreateGeometryFromWkt(wkt)
+    #         # or this
+    #         point = ogr.Geometry(ogr.wkbPoint)
+    #         point.AddPoint(coord[0], coord[1])
+    #
+    #         # Set the feature geometry using the point
+    #         v_feature.SetGeometry(point)
+    #         # Create the feature in the layer (shapefile)
+    #         point_layer.CreateFeature(v_feature)
+    #         # Dereference the feature
+    #         v_feature = None
+    #     # Save and close the data source
+    #     point_ds = None
 
     # For triangles - cells
-    if args.which != Which.VERTEX:
-        cell_shp = args.outputs[0] if args.which == 1 else args.outputs[1]
-        triangle_ds = shp_driver.CreateDataSource(cell_shp)
+    # if args.which != Which.VERTEX:
+    cell_shp, ext = os.path.splitext(args.outputs[0]) # if args.which == 1 else args.outputs[1]
+
+    xyz_lvl = unstr.xyz
+    connect_lvl = unstr.connect
+    attr_lvl = my_data
+    poly_data_lvl = unstr_to_poly_data(xyz_lvl, connect_lvl, attr_lvl)
+
+    for i in range(args.maxzoom, -1, -1):
+        cell_shp_lvl = cell_shp + '_' + str(i) + ext
+        triangle_ds = shp_driver.CreateDataSource(cell_shp_lvl)
         triangle_layer = triangle_ds.CreateLayer("cells", srs, ogr.wkbTriangle)
         triangle_layer.CreateField(ogr.FieldDefn("Data", ogr.OFTReal))
 
-        for idx, cell in enumerate(connect):
-            xyz_a, xyz_b, xyz_c = xyz[cell[0]], xyz[cell[1]], xyz[cell[2]]
+        for idx, cell in enumerate(connect_lvl):
+            xyz_a, xyz_b, xyz_c = xyz_lvl[cell[0]], xyz_lvl[cell[1]], xyz_lvl[cell[2]]
             coord_a = xyz_a * args.scale + base
             coord_b = xyz_b * args.scale + base
             coord_c = xyz_c * args.scale + base
             c_feature = ogr.Feature(triangle_layer.GetLayerDefn())
-            c_feature.SetField("Data", my_data[idx])
+            c_feature.SetField("Data", attr_lvl[idx])
 
             # this
-#            wkt = "TRIANGLE((%f %f, %f %f, %f %f, %f %f))" % (coord_a[0], coord_a[1], coord_b[0], coord_b[1],
-#                                                              coord_c[0], coord_c[1], coord_a[0], coord_a[1])
-#            triangle = ogr.CreateGeometryFromWkt(wkt)
+            # wkt = "TRIANGLE((%f %f, %f %f, %f %f, %f %f))" % (coord_a[0], coord_a[1], coord_b[0], coord_b[1],
+            #                                                  coord_c[0], coord_c[1], coord_a[0], coord_a[1])
+            # triangle = ogr.CreateGeometryFromWkt(wkt)
             # or this
             # Create ring
             ring = ogr.Geometry(ogr.wkbLinearRing)
@@ -113,12 +122,13 @@ def xdmf_args_to_shp(args):
             triangle_layer.CreateFeature(c_feature)
             c_feature = None
 
-    # Save and close the data source
-    point_ds = None
-    triangle_ds = None
+        poly_data_lvl = decimate(poly_data_lvl, args.reduction)
+        xyz_lvl, connect_lvl, attr_lvl = map_cell_attribute(xyz_lvl, connect_lvl, attr_lvl, poly_data_lvl)
+        # Save and close the data source
+        triangle_ds = None
 
 
-def xdmf_to_shp(input_file, data, idt, output_files=None, epsg=3857, which=Which.CELL, base=(0, 0, 0), scale=1):
+def xdmf_to_shp(input_file, data, idt, output_files=None, epsg=3857, max_zoom=10, reduction=0.5, base=(0, 0, 0), scale=1):
     """Converts xdmf to shapefile
     :param input_file: Fault output file name (xdmf), or TODO, maybe: SeisSol netcdf (nc) or ts (Gocad)
     :param data: Data to visualize (example SRs)
@@ -127,16 +137,18 @@ def xdmf_to_shp(input_file, data, idt, output_files=None, epsg=3857, which=Which
     :param output_files: The list of output shapefiles
     :param epsg: EPSG code of the layer
     :param which: Extract data of vertices (0), cells (1), or both (2)
-    :param base: (base_x, base_y, base_z) position of the layer
-    :param scale: scale of the layer
+    :param max_zoom: Max zoom level for the dataset
+    :param reduction: Target reduction for each zoom level
+    :param base: (base_x, base_y, base_z) position of the dataset
+    :param scale: Scale of the dataset
     """
     if output_files is None:
-        if which == Which.BOTH:
-            output_files = ['output0.shp', 'output1.shp']
-        else:
-            output_files = ['output.shp']
+        # if which == Which.BOTH:
+        #     output_files = ['output0.shp', 'output1.shp']
+        # else:
+        output_files = ['output.shp']
     args = Namespace(filename=input_file, Data=data, idt=idt, oneDtMem=False, restart=[0],
-                     outputs=output_files, epsg=epsg, which=which, base=base, scale=scale)
+                     outputs=output_files, epsg=epsg, maxzoom=max_zoom, reduction=reduction, base=base, scale=scale)
     xdmf_args_to_shp(args)
 
 
@@ -151,8 +163,10 @@ if __name__ == '__main__':
                         some postprocessing is necessary on Vr: Vr[n+idt] = Vr[n] + Vr[idt]', type=int, default=[0])
     parser.add_argument('--outputs', help='output shapefiles', nargs='*', default=['cells.shp'])
     parser.add_argument('--epsg', help='EPSG code of the layer', type=int, default=3857)
-    parser.add_argument('--which', help='extract vertice data (0) or cell data (1) or both (2)',
-                        type=int, choices=[0, 1, 2], default=Which.CELL)
+    # parser.add_argument('--which', help='extract vertice data (0) or cell data (1) or both (2)',
+    #                     type=int, choices=[0, 1, 2], default=Which.CELL)
+    parser.add_argument('--maxzoom', help='max zoom level for this dataset', type=int, default=10)
+    parser.add_argument('--reduction', help='target reduction for each zoom level', type=float, default=0.5)
     parser.add_argument('--base', help='base_x, base_y, base_z position of the layer', nargs=3,
                         type=float, default=[0, 0, 0])
     parser.add_argument('--scale', help='scale of the layer', type=int, default=1)

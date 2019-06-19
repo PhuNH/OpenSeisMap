@@ -14,8 +14,7 @@ def open_shapefile(file_path):
     """
     datasource = ogr.Open(file_path)
     layer = datasource.GetLayerByIndex(0)
-    print("Opening {}".format(file_path))
-    print("Number of features: {}".format(layer.GetFeatureCount()))
+    print("Opening {} with {} features".format(file_path, layer.GetFeatureCount()))
     return datasource
 
 
