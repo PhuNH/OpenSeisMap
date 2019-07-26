@@ -49,15 +49,27 @@ map.on('baselayerchange', function(e) {
     colorScaleName = e.name;
     colorFunc = chroma.scale(scales[colorScaleName]);
     for (var i = 0; i < sites.length; i++)
-        processSite(sites[i], i);
+        processColor(sites[i], i);
 });
+map.on('zoomend', function() {
+    for (var i = 0; i < sites.length; i++)
+        processZoom(sites[i], i, map.getZoom());
+});
+
+function processZoom(site, index, zoom) {
+    if (zoom >= site.minZoom && zoom <= site.maxZoom) {
+        if (!map.hasLayer(markers[index]))
+            markers[index].addTo(map);
+    } else
+        map.removeLayer(markers[index]);
+}
 
 function prettify(num) {
     if (num > 1e3 || num < -1e3 || (num > -1e-3 && num < 1e-3)) return num.toExponential(3);
     else return num.toFixed(3);
 }
 
-function processSite(site, index) {
+function processColor(site, index) {
     colorFunc = colorFunc.domain(domains[colorScaleName].map(x => site.minVal+x*(site.maxVal-site.minVal)));
     var div = L.DomUtil.create('div', 'info legend');
     div.innerHTML += site.name + '<br>';
@@ -110,7 +122,7 @@ xhr.onload = function() {
     if (xhr.status !== 200) return;
     sites = xhr.response.sites;
     for (var i = 0; i < sites.length; i++)
-        processSite(sites[i], i);
+        processColor(sites[i], i);
 };
 xhr.send();
 

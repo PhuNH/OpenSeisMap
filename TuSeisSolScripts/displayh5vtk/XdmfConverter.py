@@ -23,7 +23,7 @@ import GeoFunctions
 # Which = enum('VERTEX', 'CELL', 'BOTH')
 
 
-def make_json(shapefile):
+def make_json(shapefile, min_zoom, max_zoom):
     cells_ds = GeoFunctions.open_shapefile(shapefile)
     cells_layer = cells_ds.GetLayerByIndex(0)
     my_data = []
@@ -62,7 +62,9 @@ def make_json(shapefile):
         "maxLon": max_lon,
         "maxLat": max_lat,
         "minVal": min_data,
-        "maxVal": max_data
+        "maxVal": max_data,
+        "minZoom": min_zoom,
+        "maxZoom": max_zoom
     })
 
     json_path_name = path_name + '.json'
@@ -185,14 +187,14 @@ def xdmf_args_to_shp(args):
             cell_shp_lvl = cell_shp + '_' + str(i) + ext
             create_cell_layer_shp(cell_shp_lvl, xyz_lvl, connect_lvl, attr_lvl)
             if i == args.maxzoom//2:
-                make_json(cell_shp_lvl)
+                make_json(cell_shp_lvl, args.minzoom, args.maxzoom)
 
             poly_data_lvl = decimate(poly_data_lvl, args.reduction)
             xyz_lvl, connect_lvl, attr_lvl = map_cell_attribute(xyz_lvl, connect_lvl, attr_lvl, poly_data_lvl)
     else:  # args.reduction == 0: create only 1 shapefile for all zoom levels
         cell_shp = args.outputs[0]
         create_cell_layer_shp(cell_shp, unstr.xyz, unstr.connect, my_data)
-        make_json(cell_shp)
+        make_json(cell_shp, args.minzoom, args.maxzoom)
 
 
 def xdmf_to_shp(input_file, data, idt, output_files=None, epsg=3857, max_zoom=10, min_zoom=0, reduction=0.5,
