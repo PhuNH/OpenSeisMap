@@ -8,9 +8,11 @@ Created on Wed Apr 24 09:38:22 2019
 import os
 from argparse import Namespace, ArgumentParser
 from osgeo import ogr, osr
+import json
 from UnstructuredData import UnstructuredData
 from DataLoader import ReadHdf5Posix
 from UnstructuredDataVtkSupport import unstr_to_poly_data, decimate, map_cell_attribute
+import GeoFunctions
 
 
 # def enum(*names):
@@ -19,6 +21,57 @@ from UnstructuredDataVtkSupport import unstr_to_poly_data, decimate, map_cell_at
 #
 #
 # Which = enum('VERTEX', 'CELL', 'BOTH')
+
+
+def make_json(shapefile):
+    cells_ds = GeoFunctions.open_shapefile(shapefile)
+    cells_layer = cells_ds.GetLayerByIndex(0)
+    my_data = []
+    cells_layer.ResetReading()
+    for cell_feature in cells_layer:
+        my_data.append(cell_feature.GetFieldAsDouble(0))
+    min_data = min(my_data)
+    max_data = max(my_data)
+    min_x, max_x, min_y, max_y = cells_layer.GetExtent()
+
+    min_lon = None
+    min_lat = None
+    max_lon = None
+    max_lat = None
+    srs = GeoFunctions.get_shapefile_srs_from_ds(cells_ds)
+    lonlat = osr.SpatialReference()
+    lonlat.ImportFromEPSG(4326)
+    transform = osr.CoordinateTransformation(srs, lonlat)
+    min_point = ogr.CreateGeometryFromWkt("POINT (" + str(min_x) + " " + str(min_y) + ")")
+    min_point.Transform(transform)
+    for ip in range(min_point.GetPointCount()):
+        min_lon, min_lat, _ = min_point.GetPoint(ip)
+    max_point = ogr.CreateGeometryFromWkt("POINT (" + str(max_x) + " " + str(max_y) + ")")
+    max_point.Transform(transform)
+    for ip in range(max_point.GetPointCount()):
+        max_lon, max_lat, _ = max_point.GetPoint(ip)
+    # print(min_data, max_data, min_lon, max_lon, min_lat, max_lat)
+
+    path_name, ext = os.path.splitext(shapefile)
+    name = os.path.basename(path_name)
+    obj = {"sites": []}
+    obj["sites"].append({
+        "name": name,
+        "minLon": min_lon,
+        "minLat": min_lat,
+        "maxLon": max_lon,
+        "maxLat": max_lat,
+        "minVal": min_data,
+        "maxVal": max_data
+    })
+
+    json_path_name = path_name + '.json'
+    f = open(json_path_name, "w+")
+    f.write(json.dumps(obj, indent=4))
+    f.close()
+    print("json file written")
+    # with open(json_path_name, 'w+') as outfile:
+    #     json.dump(obj, outfile)
 
 
 def xdmf_args_to_shp(args):
@@ -128,15 +181,18 @@ def xdmf_args_to_shp(args):
         attr_lvl = my_data
         poly_data_lvl = unstr_to_poly_data(xyz_lvl, connect_lvl, attr_lvl)
 
-        for i in range(args.maxzoom, args.minzoom-1, -1):
+        for i in range(args.maxzoom//2, args.minzoom//2-1, -1):
             cell_shp_lvl = cell_shp + '_' + str(i) + ext
             create_cell_layer_shp(cell_shp_lvl, xyz_lvl, connect_lvl, attr_lvl)
+            if i == args.maxzoom//2:
+                make_json(cell_shp_lvl)
 
             poly_data_lvl = decimate(poly_data_lvl, args.reduction)
             xyz_lvl, connect_lvl, attr_lvl = map_cell_attribute(xyz_lvl, connect_lvl, attr_lvl, poly_data_lvl)
     else:  # args.reduction == 0: create only 1 shapefile for all zoom levels
         cell_shp = args.outputs[0]
         create_cell_layer_shp(cell_shp, unstr.xyz, unstr.connect, my_data)
+        make_json(cell_shp)
 
 
 def xdmf_to_shp(input_file, data, idt, output_files=None, epsg=3857, max_zoom=10, min_zoom=0, reduction=0.5,
