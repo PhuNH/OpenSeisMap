@@ -1,4 +1,8 @@
 # OpenSeisMap
+Plan
+convert to: [shapefile], image, postgis, geopackage
+use: [shapefile], image, postgis, geopackage
+
 OSM data > PostGIS
 
 Tile expiry methods
