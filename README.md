@@ -27,6 +27,7 @@ XdmfConverter: Create a shapefile from an Xdmf file
 - Can output vertex data and cell data to 2 different files. Default to work on cell data.  
 - For vertex data: Create a 'vertices' layer, each feature in the layer has 2 attributes 'X' and 'Y'.  
 For cell data: Create a 'cells' layer, in which each feature has 1 attribute 'Data'.
+- Make use of vtkQuadricDecimation and pymesh.map_face_attribute
 
 PyMesh build:
 - Set $CC and $CXX to files in /usr/bin.
