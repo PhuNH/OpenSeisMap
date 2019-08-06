@@ -56,6 +56,8 @@ map.on('zoomend', function() {
         processZoom(sites[i], i, map.getZoom());
 });
 
+L.control.scale().addTo(map);
+
 function processZoom(site, index, zoom) {
     if (zoom >= site.minZoom && zoom <= site.maxZoom) {
         if (!map.hasLayer(markers[index]))
