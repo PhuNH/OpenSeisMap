@@ -11,7 +11,7 @@ from osgeo import ogr, osr
 import json
 from UnstructuredData import UnstructuredData
 from DataLoader import ReadHdf5Posix
-from UnstructuredDataVtkSupport import unstr_to_poly_data, decimate, map_cell_attribute
+from UnstructuredDataVtkSupport import unstr_to_poly_data, clean, decimate, poly_data_to_unstr, map_cell_attribute
 import GeoFunctions
 
 
@@ -106,13 +106,7 @@ def xdmf_args_to_shp(args):
         triangle_layer.CreateField(ogr.FieldDefn("Data", ogr.OFTReal))
 
         for idx, cell in enumerate(connect):
-            xyz_a, xyz_b, xyz_c = xyz[cell[0]], xyz[cell[1]], xyz[cell[2]]
-            coord_a = xyz_a * args.scale + base
-            coord_b = xyz_b * args.scale + base
-            coord_c = xyz_c * args.scale + base
-            c_feature = ogr.Feature(triangle_layer.GetLayerDefn())
-            c_feature.SetField("Data", attr[idx])
-
+            coord_a, coord_b, coord_c = xyz[cell] * args.scale + base
             # this
             # wkt = "TRIANGLE((%f %f, %f %f, %f %f, %f %f))" % (coord_a[0], coord_a[1], coord_b[0], coord_b[1],
             #                                                  coord_c[0], coord_c[1], coord_a[0], coord_a[1])
@@ -128,6 +122,8 @@ def xdmf_args_to_shp(args):
             triangle = ogr.Geometry(ogr.wkbTriangle)
             triangle.AddGeometry(ring)
 
+            c_feature = ogr.Feature(triangle_layer.GetLayerDefn())
+            c_feature.SetField("Data", attr[idx])
             c_feature.SetGeometry(triangle)
             triangle_layer.CreateFeature(c_feature)
             c_feature = None
@@ -182,15 +178,19 @@ def xdmf_args_to_shp(args):
         connect_lvl = unstr.connect
         attr_lvl = my_data
         poly_data_lvl = unstr_to_poly_data(xyz_lvl, connect_lvl, attr_lvl)
+        if args.needs_cleaning:
+            poly_data_lvl = clean(poly_data_lvl)
+            xyz_lvl, connect_lvl, _ = poly_data_to_unstr(poly_data_lvl)
+        
+        cell_shp_lvl = cell_shp + '_' + str(args.maxzoom//2) + ext
+        create_cell_layer_shp(cell_shp_lvl, xyz_lvl, connect_lvl, attr_lvl)
+        make_json(cell_shp_lvl, args.minzoom, args.maxzoom)
 
-        for i in range(args.maxzoom//2, args.minzoom//2-1, -1):
+        for i in range(args.maxzoom//2-1, args.minzoom//2-1, -1):
+            poly_data_lvl = decimate(poly_data_lvl, args.reduction, len(xyz_lvl) >= 1000000)
+            xyz_lvl, connect_lvl, attr_lvl = map_cell_attribute(xyz_lvl, connect_lvl, attr_lvl, poly_data_lvl)
             cell_shp_lvl = cell_shp + '_' + str(i) + ext
             create_cell_layer_shp(cell_shp_lvl, xyz_lvl, connect_lvl, attr_lvl)
-            if i == args.maxzoom//2:
-                make_json(cell_shp_lvl, args.minzoom, args.maxzoom)
-
-            poly_data_lvl = decimate(poly_data_lvl, args.reduction)
-            xyz_lvl, connect_lvl, attr_lvl = map_cell_attribute(xyz_lvl, connect_lvl, attr_lvl, poly_data_lvl)
     else:  # args.reduction == 0: create only 1 shapefile for all zoom levels
         cell_shp = args.outputs[0]
         create_cell_layer_shp(cell_shp, unstr.xyz, unstr.connect, my_data)
@@ -198,7 +198,7 @@ def xdmf_args_to_shp(args):
 
 
 def xdmf_to_shp(input_file, data, idt, output_files=None, epsg=3857, max_zoom=10, min_zoom=0, reduction=0.5,
-                base=(0, 0, 0), scale=1):
+                base=(0, 0, 0), scale=1, needs_cleaning=False):
     """Converts xdmf to shapefile
     :param input_file: Fault output file name (xdmf), or TODO, maybe: SeisSol netcdf (nc) or ts (Gocad)
     :param data: Data to visualize (example SRs)
@@ -208,9 +208,10 @@ def xdmf_to_shp(input_file, data, idt, output_files=None, epsg=3857, max_zoom=10
     :param epsg: EPSG code of the layer
     :param max_zoom: Max zoom level for the dataset
     :param min_zoom: Min zoom level for the dataset
-    :param reduction: Target reduction for each zoom level
+    :param reduction: Empirical target reduction for each zoom level
     :param base: (base_x, base_y, base_z) position of the dataset
     :param scale: Scale of the dataset
+    :param needs_cleaning: Whether the data needs cleaning for the first decimation
     """
     if output_files is None:
         # if which == Which.BOTH:
@@ -219,7 +220,7 @@ def xdmf_to_shp(input_file, data, idt, output_files=None, epsg=3857, max_zoom=10
         output_files = ['output.shp']
     args = Namespace(filename=input_file, Data=data, idt=idt, oneDtMem=False, restart=[0],
                      outputs=output_files, epsg=epsg, maxzoom=max_zoom, minzoom=min_zoom, reduction=reduction,
-                     base=base, scale=scale)
+                     base=base, scale=scale, needs_cleaning=needs_cleaning)
     xdmf_args_to_shp(args)
 
 
@@ -242,6 +243,8 @@ if __name__ == '__main__':
     parser.add_argument('--base', help='base_x, base_y, base_z position of the layer', nargs=3,
                         type=float, default=[0, 0, 0])
     parser.add_argument('--scale', help='scale of the layer', type=int, default=1)
+    parser.add_argument('--needs-cleaning', action='store_true',
+                        help='whether the data needs cleaning for the first decimation')
     arguments = parser.parse_args()
     # arguments = Namespace(filename='../../data/data-surface.xdmf',
     #                       Data=['v3d'], idt=[160], oneDtMem=False, restart=[0],
@@ -256,3 +259,4 @@ if __name__ == '__main__':
     #             data=['V'], idt=[50],
     #             output_files=['../../data/sumatra_cells.shp'],
     #             epsg=32646, which=Which.CELL)
+    # reduction: seis - 0.025, sumatra - 0.2

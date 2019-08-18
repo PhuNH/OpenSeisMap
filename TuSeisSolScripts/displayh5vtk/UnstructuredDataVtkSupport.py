@@ -95,34 +95,39 @@ def draw(poly_data, color_scale='Diverging', write_file=False, file_name='unstr.
         del writer
 
 
-def decimate(poly_data, reduction):
+def clean(poly_data):
     cleaner = vtk.vtkCleanPolyData()
     cleaner.SetInputData(poly_data)
     cleaner.Update()
-    
-    # filter = vtk.vtkTriangleFilter()
-    # filter.SetInputConnection(cleaned.GetOutputPort())
-    # filter.Update()
 
-    cleaned = cleaner.GetOutput()
+    cleaned = vtk.vtkPolyData()
+    cleaned.ShallowCopy(cleaner.GetOutput())
     print("Cleaned:", cleaned.GetNumberOfPoints(), "points", cleaned.GetNumberOfPolys(), "polygons")
     # draw(cleaned, color_scale='Rainbow', write_file=True, file_name='before.png')
-
-    # decimator = vtk.vtkDecimatePro()
-    # decimator.PreserveTopologyOn()
-    # decimator.SplittingOn()
-    # decimator.BoundaryVertexDeletionOn()
-    # decimator.SetMaximumError(vtk.VTK_DOUBLE_MAX)
-    # decimator = vtk.vtkQuadricClustering()
-    decimator = vtk.vtkQuadricDecimation()
-    decimator.SetInputData(cleaned)
-    decimator.SetTargetReduction(reduction)
+    return cleaned
+    
+    
+def decimate(poly_data, reduction, data_is_big):
+    decimator = None
+    #decimator = vtk.vtkDecimatePro()
+    #decimator.PreserveTopologyOn()
+    #decimator.SplittingOff()
+    #decimator.BoundaryVertexDeletionOff()
+    #decimator.SetMaximumError(vtk.VTK_DOUBLE_MAX)
+    if data_is_big:
+        decimator = vtk.vtkQuadricClustering()
+        decimator.SetNumberOfXDivisions(1024)
+        decimator.SetNumberOfYDivisions(1024)
+        decimator.SetNumberOfZDivisions(1024)
+    else:
+        decimator = vtk.vtkQuadricDecimation()
+        decimator.SetTargetReduction(reduction)
+    decimator.SetInputData(poly_data)
     decimator.Update()
 
     decimated = vtk.vtkPolyData()
     decimated.ShallowCopy(decimator.GetOutput())
-
-    print("Decimated:", decimated.GetNumberOfPoints(), "points", decimated.GetNumberOfPolys(), "polygons")
+    print("Decimated:", decimated.GetNumberOfPoints(), "points", decimated.GetNumberOfPolys(), "polygons, by ", type(decimator))
     # draw(decimated, color_scale='Rainbow', write_file=True, file_name='after.png')
     return decimated
 
