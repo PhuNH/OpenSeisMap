@@ -229,10 +229,6 @@ if __name__ == '__main__':
     parser.add_argument('filename', help='fault output filename (xdmf)')
     parser.add_argument('Data', nargs=1, metavar='data_name', default='', help='Data to visualize (example SRs)')
     parser.add_argument('idt', nargs=1, help='time step to extract (1st = 0)', type=int)
-    parser.add_argument('--oneDtMem', dest='oneDtMem', action='store_true', default=False,
-                        help='store only the dt to be displayed in RAM')
-    parser.add_argument('--restart', nargs=1, metavar='idt', help='in case of a restart at time frame idt, \
-                        some postprocessing is necessary on Vr: Vr[n+idt] = Vr[n] + Vr[idt]', type=int, default=[0])
     parser.add_argument('--outputs', help='output shapefiles', nargs='*', default=['cells.shp'])
     parser.add_argument('--epsg', help='EPSG code of the layer', type=int, default=3857)
     # parser.add_argument('--which', help='extract vertice data (0) or cell data (1) or both (2)',
@@ -254,6 +250,8 @@ if __name__ == '__main__':
     #                       Data=['V'], idt=[50], oneDtMem=False, restart=[0],
     #                       outputs=['../../data/sumatra_cells.shp'],
     #                       epsg=32646, which=Which.CELL, base=[0, 0, 0], scale=1)
+    arguments.oneDtMem = False
+    arguments.restart = [0]
     xdmf_args_to_shp(arguments)
     # xdmf_to_shp(input_file='../../data/sumatra-surface.xdmf',
     #             data=['V'], idt=[50],
