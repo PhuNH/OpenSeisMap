@@ -34,7 +34,7 @@ def make_colors(shapefile, color_count=256):
     return stops, colors
 
 
-def make_image(shapefile, output, color_count=256, threshold=0.6, opening=False, with_world=False):
+def make_image(shapefile, output, color_count=256, upper=-0.5, lower=0.5, opening=False, with_world=False):
     stops, colors = make_colors(shapefile, color_count)
 
     m = mapnik.Map(1300, 900)  # Create a map with a given width and height in pixels
@@ -74,8 +74,8 @@ def make_image(shapefile, output, color_count=256, threshold=0.6, opening=False,
         r = mapnik.Rule()  # Rule object to hold symbolizers
         # To fill a polygon we create a PolygonSymbolizer
         psym = mapnik.PolygonSymbolizer()
-        # Make opacity in between 0.5 and 1
-        psym.fill_opacity = 0.5 + 0.5 * ((i+1) / color_count) if (abs(stops[i]) >= threshold) else 0
+        # Make opacity in between 0.2 and 0.85
+        psym.fill_opacity = 0.2 + 0.65 * ((i+1) / color_count) if (stops[i] >= lower or stops[i] <= upper) else 0
         psym.fill = mapnik.Color(colors[i].web)
         r.symbols.append(psym)  # Add the symbolizer to the rule object
         r.filter = mapnik.Expression("[Data] >= {} and [Data] < {}".format(stops[i], stops[i+1]))
@@ -117,15 +117,16 @@ if __name__ == '__main__':
     parser.add_argument('shapefile', help='path of the shapefile')
     parser.add_argument('output', help='path of the output file')
     parser.add_argument('--colors', help='number of colors to use', metavar='COUNT', type=int, default=256)
-    parser.add_argument('--threshold', help='values within this distance from zero will not be displayed',
-                        type=float, default=0.6)
+    parser.add_argument('--upper', help='values below this value will be displayed', type=float, default=float("-inf"))
+    parser.add_argument('--lower', help='values above this value will be displayed', type=float, default=float("inf"))
     parser.add_argument('--opening', help='open the image when finishing?', action="store_true")
     parser.add_argument('--withWorld', help='render a background of the world map?', action="store_true")
     args = parser.parse_args()
     make_image(shapefile=args.shapefile,
                output=args.output,
                color_count=args.colors,
-               threshold=args.threshold,
+               upper=args.upper,
+               lower=args.lower,
                opening=args.opening,
                with_world=args.withWorld)
     # make_image(shapefile="../../data/sumatra_cells.shp",
