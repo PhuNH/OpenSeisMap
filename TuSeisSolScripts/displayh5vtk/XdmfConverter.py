@@ -54,8 +54,8 @@ def make_json(shapefile, min_zoom, max_zoom):
 
     path_name, ext = os.path.splitext(shapefile)
     name = os.path.basename(path_name)
-    obj = {"sites": []}
-    obj["sites"].append({
+    obj = {"sets": []}
+    obj["sets"].append({
         "name": name,
         "minLon": min_lon,
         "minLat": min_lat,
