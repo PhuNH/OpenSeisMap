@@ -9,8 +9,7 @@ import os
 from argparse import Namespace, ArgumentParser
 from osgeo import ogr, osr
 import json
-from UnstructuredData import UnstructuredData
-from DataLoader import ReadHdf5Posix
+from submodules.pythonXdmfReader.pythonXdmfReader import ReadGeometry, ReadConnect, LoadData, ReadNdt
 from UnstructuredDataVtkSupport import unstr_to_poly_data, clean, decimate, poly_data_to_unstr, map_cell_attribute
 import GeoFunctions
 
@@ -87,18 +86,21 @@ def xdmf_args_to_shp(args):
     #     raise ValueError("Not enough names for output files")
     if not (0 <= args.reduction < 1):
         raise ValueError("reduction should be in the [0, 1) interval")
+    mesh_ndt = ReadNdt(args.filename)
+    if not (0 <= args.idt < mesh_ndt):
+        raise ValueError("idt is invalid")
 
-    base = tuple(args.base)
-
-    unstr = UnstructuredData()
-    ReadHdf5Posix(args, unstr)
-    my_data = unstr.myData[args.idt].flatten()
+    mesh_xyz = ReadGeometry(args.filename)
+    mesh_connect = ReadConnect(args.filename)
+    mesh_data, _ = LoadData(args.filename, args.Data[0], mesh_connect.shape[0], args.idt, oneDtMem=True)
 
     # Set up the shapefile driver
     shp_driver = ogr.GetDriverByName("ESRI Shapefile")
     # Create the spatial reference, WGS84
     srs = osr.SpatialReference()
     srs.ImportFromEPSG(args.epsg)
+
+    base = tuple(args.base)
 
     def create_cell_layer_shp(file_name, xyz, connect, attr):
         triangle_ds = shp_driver.CreateDataSource(file_name)
@@ -174,9 +176,9 @@ def xdmf_args_to_shp(args):
         # if args.which != Which.VERTEX:
         cell_shp, ext = os.path.splitext(args.outputs[0])  # if args.which == 1 else args.outputs[1]
 
-        xyz_lvl = unstr.xyz
-        connect_lvl = unstr.connect
-        attr_lvl = my_data
+        xyz_lvl = mesh_xyz
+        connect_lvl = mesh_connect
+        attr_lvl = mesh_data
         poly_data_lvl = unstr_to_poly_data(xyz_lvl, connect_lvl, attr_lvl)
         if args.needs_cleaning:
             poly_data_lvl = clean(poly_data_lvl)
@@ -193,7 +195,7 @@ def xdmf_args_to_shp(args):
             create_cell_layer_shp(cell_shp_lvl, xyz_lvl, connect_lvl, attr_lvl)
     else:  # args.reduction == 0: create only 1 shapefile for all zoom levels
         cell_shp = args.outputs[0]
-        create_cell_layer_shp(cell_shp, unstr.xyz, unstr.connect, my_data)
+        create_cell_layer_shp(cell_shp, mesh_xyz, mesh_connect, mesh_data)
         make_json(cell_shp, args.minzoom, args.maxzoom)
 
 
@@ -202,8 +204,7 @@ def xdmf_to_shp(input_file, data, idt, output_files=None, epsg=3857, max_zoom=10
     """Converts xdmf to shapefile
     :param input_file: Fault output file name (xdmf), or TODO, maybe: SeisSol netcdf (nc) or ts (Gocad)
     :param data: Data to visualize (example SRs)
-    :param idt: The time step to visualize, stored in a list (1st = 0);
-    -1 = all is supported by DataLoader but will give wrong results here
+    :param idt: The time step to visualize (1st = 0);
     :param output_files: The list of output shapefiles
     :param epsg: EPSG code of the layer
     :param max_zoom: Max zoom level for the dataset
@@ -218,7 +219,7 @@ def xdmf_to_shp(input_file, data, idt, output_files=None, epsg=3857, max_zoom=10
         #     output_files = ['output0.shp', 'output1.shp']
         # else:
         output_files = ['output.shp']
-    args = Namespace(filename=input_file, Data=data, idt=idt, oneDtMem=False, restart=[0],
+    args = Namespace(filename=input_file, Data=data, idt=idt,
                      outputs=output_files, epsg=epsg, maxzoom=max_zoom, minzoom=min_zoom, reduction=reduction,
                      base=base, scale=scale, needs_cleaning=needs_cleaning)
     xdmf_args_to_shp(args)
@@ -228,7 +229,7 @@ if __name__ == '__main__':
     parser = ArgumentParser(description='Convert xdmf to shapefile')
     parser.add_argument('filename', help='fault output filename (xdmf)')
     parser.add_argument('Data', nargs=1, metavar='data_name', default='', help='Data to visualize (example SRs)')
-    parser.add_argument('idt', nargs=1, help='time step to extract (1st = 0)', type=int)
+    parser.add_argument('idt', help='time step to extract (1st = 0)', type=int, default=0)
     parser.add_argument('--outputs', help='output shapefiles', nargs='*', default=['cells.shp'])
     parser.add_argument('--epsg', help='EPSG code of the layer', type=int, default=3857)
     # parser.add_argument('--which', help='extract vertice data (0) or cell data (1) or both (2)',
@@ -250,8 +251,6 @@ if __name__ == '__main__':
     #                       Data=['V'], idt=[50], oneDtMem=False, restart=[0],
     #                       outputs=['../../data/sumatra_cells.shp'],
     #                       epsg=32646, which=Which.CELL, base=[0, 0, 0], scale=1)
-    arguments.oneDtMem = False
-    arguments.restart = [0]
     xdmf_args_to_shp(arguments)
     # xdmf_to_shp(input_file='../../data/sumatra-surface.xdmf',
     #             data=['V'], idt=[50],
