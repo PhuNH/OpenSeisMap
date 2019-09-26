@@ -1,0 +1,3 @@
+[submodule "submodules/pythonXdmfReader"]
+	path = submodules/pythonXdmfReader
+	url = https://github.com/Thomas-Ulrich/pythonXdmfReader

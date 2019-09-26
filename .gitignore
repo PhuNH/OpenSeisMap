@@ -1,14 +1,6 @@
 /data/
 /VTKData/
 /output*/
-/TuSeisSolScripts/*
-!/TuSeisSolScripts/displayh5vtk
-/TuSeisSolScripts/displayh5vtk/*
-!/TuSeisSolScripts/displayh5vtk/TileRenderer.py
-!/TuSeisSolScripts/displayh5vtk/XdmfConverter.py
-!/TuSeisSolScripts/displayh5vtk/GeoFunctions.py
-!/TuSeisSolScripts/displayh5vtk/text_sym.xml
-!/TuSeisSolScripts/displayh5vtk/UnstructuredDataVtkSupport.py
 /mod_tile/
 /mightdo/
 /.idea/
