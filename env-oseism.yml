@@ -6,6 +6,7 @@ dependencies:
  - python=2.7
  - python-mapnik
  - numpy
+ - scipy
  - vtk
  - gdal
  - h5py
