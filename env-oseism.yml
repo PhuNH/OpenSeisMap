@@ -11,3 +11,5 @@ dependencies:
  - gdal
  - h5py
  - lxml
+ - pip:
+   - colour

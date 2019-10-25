@@ -54,7 +54,7 @@ def make_image(shapefile, output, color_count=256, upper=-0.5, lower=0.5, openin
         world_style.rules.append(world_rule)
         m.append_style('World Style', world_style)
 
-        world_ds = mapnik.Shapefile(file='../../data/world_merc.shp')
+        world_ds = mapnik.Shapefile(file='../data/world_merc.shp')
         print("World envelope:", world_ds.envelope())
         world_layer = mapnik.Layer('world_layer')
         world_layer.srs = '+init=epsg:3857'

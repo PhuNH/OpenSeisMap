@@ -1,5 +1,6 @@
 name: gmpe_smtk
 dependencies:
  - python=3.6
+ - lxml
  - pip:
    - openquake.engine
